@@ -5,6 +5,7 @@ package userService;
 option go_package = "service/;service";
 
 import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
 
 message Register {
   string email = 1;
@@ -37,6 +38,7 @@ message Login {
 message LoginResponse {
   int32 id = 1;
   string token = 2;
+  google.protobuf.Struct msg = 3;
 }
 
 service UserService {
