@@ -21,6 +21,11 @@ func main() {
 	}()
 
 	// 启动gRPC gateway服务器
+	//go func() {
+	//	if err := runGatewayServer(grpcServerEndpoint); err != nil {
+	//		log.Fatalf("Failed to run gRPC-Gateway server: %v", err)
+	//	}
+	//}()
 	if err := runGatewayServer(grpcServerEndpoint); err != nil {
 		log.Fatalf("Failed to run gRPC-Gateway server: %v", err)
 	}
