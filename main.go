@@ -6,6 +6,7 @@ import (
 	"github/riny/go-grpc/user-system/service"
 	"google.golang.org/grpc"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 )
@@ -21,11 +22,6 @@ func main() {
 	}()
 
 	// 启动gRPC gateway服务器
-	//go func() {
-	//	if err := runGatewayServer(grpcServerEndpoint); err != nil {
-	//		log.Fatalf("Failed to run gRPC-Gateway server: %v", err)
-	//	}
-	//}()
 	if err := runGatewayServer(grpcServerEndpoint); err != nil {
 		log.Fatalf("Failed to run gRPC-Gateway server: %v", err)
 	}
@@ -62,5 +58,20 @@ func runGatewayServer(grpcServerEndpoint string) error {
 	}
 
 	// 启动http服务
-	return http.ListenAndServe("localhost:8080", mux)
+	return http.ListenAndServe("localhost:8080", allowAuthorizationMiddleware(mux))
+}
+
+func allowAuthorizationMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		slog.Info(path)
+		if path == "/u/get" {
+			header := r.Header
+			if header.Get("Authorization") == "" {
+				http.Error(w, "missing authorization: user-id", http.StatusUnauthorized)
+				return
+			}
+		}
+		h.ServeHTTP(w, r)
+	})
 }
