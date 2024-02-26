@@ -1,6 +1,8 @@
 package util
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"regexp"
 	"strings"
 )
@@ -50,4 +52,14 @@ func CheckValidPassword(password string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func GenerateVerifyCode(password string) string {
+	code := sha256.Sum256([]byte(password))
+	s := hex.EncodeToString(code[:])
+	return s
+}
+
+func GenerateStrToken() string {
+	return "123"
 }

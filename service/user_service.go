@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"github/riny/go-grpc/user-system/model"
+	"github/riny/go-grpc/user-system/repository"
 	"github/riny/go-grpc/user-system/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -12,6 +14,11 @@ import (
 
 type ImplementedUserServiceServer struct {
 	UserServiceServer
+	UserRepo *repository.UserRepo
+}
+
+func NewImplementedUserServiceServer(userRepo *repository.UserRepo) *ImplementedUserServiceServer {
+	return &ImplementedUserServiceServer{UserRepo: userRepo}
 }
 
 func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*LoginResponse, error) {
@@ -57,13 +64,21 @@ func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Regist
 	}
 
 	// check email is existing
+	if exists, err := s.UserRepo.CheckEmailIsExisting(req.Email); exists {
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+		}
+		return nil, status.Errorf(codes.InvalidArgument, "your email resgitered. please check again.")
+	}
 
 	// create user
-	resp, err := createUser(ctx, req)
+	user := &model.User{Email: req.Email, Password: req.Password, VerifyCode: util.GenerateVerifyCode(req.Password)}
+	err := s.UserRepo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 	}
-	return resp, nil
+	res := &RegisterResponse{Id: user.Id, Token: util.GenerateStrToken(), VerifyCode: user.VerifyCode}
+	return res, nil
 }
 
 func (s *ImplementedUserServiceServer) QueryUserInfo(ctx context.Context, req *Query) (*QueryResponse, error) {
@@ -72,10 +87,4 @@ func (s *ImplementedUserServiceServer) QueryUserInfo(ctx context.Context, req *Q
 	}
 
 	return &QueryResponse{Id: req.Id, Email: "temp@temp.com"}, nil
-}
-
-func createUser(ctx context.Context, req *Register) (*RegisterResponse, error) {
-	resp := &RegisterResponse{}
-
-	return resp, nil
 }
