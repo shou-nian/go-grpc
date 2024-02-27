@@ -4,11 +4,11 @@ import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github/riny/go-grpc/user-system/config"
+	"github/riny/go-grpc/user-system/logger"
 	"github/riny/go-grpc/user-system/repository"
 	"github/riny/go-grpc/user-system/service"
 	"google.golang.org/grpc"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -82,8 +82,7 @@ func runGatewayServer(grpcServerEndpoint string, ur *repository.UserRepo) error 
 func allowAuthorizationMiddleware(h http.Handler, ur *repository.UserRepo) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		slog.Info("request path: ", path)
-		if path == "/u/get" {
+		if path == "/api/v1/u/get" {
 			auth := r.Header.Get("Authorization")
 			if auth == "" {
 				http.Error(w, "missing authorization token.", http.StatusUnauthorized)
@@ -103,5 +102,6 @@ func allowAuthorizationMiddleware(h http.Handler, ur *repository.UserRepo) http.
 			}
 		}
 		h.ServeHTTP(w, r)
+		logger.PrintRequestInfo(r)
 	})
 }
