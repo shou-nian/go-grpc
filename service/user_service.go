@@ -10,9 +10,12 @@ import (
 	"google.golang.org/grpc/status"
 	"net/http"
 	"regexp"
+	"sync"
 )
 
 type ImplementedUserServiceServer struct {
+	sync.Mutex
+	sync.WaitGroup
 	UserServiceServer
 	UserRepo *repository.UserRepo
 }
@@ -75,10 +78,18 @@ func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Regist
 
 	// create user
 	user := &model.User{Email: req.Email, Password: req.Password, VerifyCode: util.GenerateVerifyCode(req.Password)}
-	err := s.UserRepo.CreateUser(ctx, user)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	select {
+	case <-ctx.Done():
+		return nil, status.Errorf(codes.Canceled, "Task canceled due to timeout or cancellation")
+	default:
+		s.Lock()
+		err := s.UserRepo.CreateUser(ctx, user)
+		s.Unlock()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+		}
 	}
+
 	res := &RegisterResponse{Id: user.Id, Token: util.GenerateStrToken(), VerifyCode: user.VerifyCode}
 	return res, nil
 }
