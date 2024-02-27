@@ -23,18 +23,20 @@ func NewImplementedUserServiceServer(userRepo *repository.UserRepo) *Implemented
 
 func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*LoginResponse, error) {
 	if req.Email == "" || req.Password == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "email and password are required.")
+		return nil, status.Errorf(codes.InvalidArgument, "email and password is required.")
 	}
 
-	if req.Email == "test@example.com" && req.Password == "admin" {
-		resp := &LoginResponse{
-			Id:    0,
-			Token: "admin",
-		}
-		return resp, nil
+	user, err := s.UserRepo.QueryUserInfo(ctx, req.Email)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "email or password error. please try again.")
 	}
 
-	return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	if req.Password != user.Password {
+		return nil, status.Errorf(codes.InvalidArgument, "email or password error. please try again.")
+	}
+
+	res := &LoginResponse{Id: user.Id, Token: util.GenerateStrToken()}
+	return res, nil
 }
 
 func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Register) (*RegisterResponse, error) {

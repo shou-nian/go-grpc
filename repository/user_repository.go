@@ -24,8 +24,12 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user *model.User) error {
 	return ur.db.connection.Create(user).Error
 }
 
-func (ur *UserRepo) QueryUserInfo(ctx context.Context, user *model.User) error {
-	return nil
+func (ur *UserRepo) QueryUserInfo(ctx context.Context, email string) (*model.User, error) {
+	var user = new(model.User)
+	if err := ur.db.connection.Model(&model.User{}).Where("email = ?", email).First(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (ur *UserRepo) CheckEmailIsExisting(email string) (bool, error) {
