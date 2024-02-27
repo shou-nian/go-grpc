@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/u/get": {
+    "/api/v1/u/get": {
       "get": {
         "operationId": "UserService_queryUserInfo",
         "responses": {
@@ -42,7 +42,7 @@
         ]
       }
     },
-    "/u/login": {
+    "/api/v1/u/login": {
       "post": {
         "operationId": "UserService_login",
         "responses": {
@@ -74,7 +74,7 @@
         ]
       }
     },
-    "/u/register": {
+    "/api/v1/u/register": {
       "post": {
         "operationId": "UserService_register",
         "responses": {

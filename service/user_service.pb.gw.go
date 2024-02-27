@@ -305,11 +305,11 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_UserService_Register_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"u", "register"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UserService_Register_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "u", "register"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UserService_QueryUserInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"u", "get"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UserService_QueryUserInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "u", "get"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_UserService_Login_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"u", "login"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_UserService_Login_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "u", "login"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

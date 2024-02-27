@@ -44,20 +44,20 @@ message LoginResponse {
 service UserService {
   rpc register(Register) returns (RegisterResponse) {
     option (google.api.http) = {
-      post: "/u/register"
+      post: "/api/v1/u/register"
       body: "*"
     };
   }
 
   rpc queryUserInfo(Query) returns (QueryResponse) {
     option (google.api.http) = {
-      get: "/u/get"
+      get: "/api/v1/u/get"
     };
   }
 
   rpc login(Login) returns (LoginResponse) {
     option (google.api.http) = {
-      post: "/u/login"
+      post: "/api/v1/u/login"
       body: "*"
     };
   }
