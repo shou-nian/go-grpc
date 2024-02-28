@@ -19,6 +19,16 @@ message RegisterResponse {
   string verifyCode = 3;
 }
 
+message Update {
+  string password = 1;
+}
+
+message UpdateResponse {
+  int32 id = 1;
+  string token = 2;
+  string verifyCode = 3;
+}
+
 message Query {
   int32 id = 1;
 }
@@ -45,6 +55,13 @@ service UserService {
   rpc register(Register) returns (RegisterResponse) {
     option (google.api.http) = {
       post: "/api/v1/u/register"
+      body: "*"
+    };
+  }
+
+  rpc update(Update) returns (UpdateResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/u/update"
       body: "*"
     };
   }

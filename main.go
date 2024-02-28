@@ -81,27 +81,27 @@ func runGatewayServer(grpcServerEndpoint string, ur *repository.UserRepo) error 
 
 func allowAuthorizationMiddleware(h http.Handler, ur *repository.UserRepo) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.PrintRequestInfo(r)
 		path := r.URL.Path
 		if path == "/api/v1/u/get" {
 			auth := r.Header.Get("Authorization")
 			if auth == "" {
-				http.Error(w, "missing authorization token.", http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 			if !strings.HasPrefix(auth, "Bearer ") {
-				http.Error(w, "missing authorization token.", http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
-			if exists, err := ur.CheckValidToken(nil, auth); !exists {
+			if exists, err := ur.CheckValidToken(nil, auth[7:]); !exists {
 				if err != nil {
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return
 				}
-				http.Error(w, "invalid authorization token. please try again.", http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 		}
 		h.ServeHTTP(w, r)
-		logger.PrintRequestInfo(r)
 	})
 }

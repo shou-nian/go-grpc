@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
 	Register(ctx context.Context, in *Register, opts ...grpc.CallOption) (*RegisterResponse, error)
+	Update(ctx context.Context, in *Update, opts ...grpc.CallOption) (*UpdateResponse, error)
 	QueryUserInfo(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryResponse, error)
 	Login(ctx context.Context, in *Login, opts ...grpc.CallOption) (*LoginResponse, error)
 }
@@ -38,6 +39,15 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 func (c *userServiceClient) Register(ctx context.Context, in *Register, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	out := new(RegisterResponse)
 	err := c.cc.Invoke(ctx, "/userService.UserService/register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) Update(ctx context.Context, in *Update, opts ...grpc.CallOption) (*UpdateResponse, error) {
+	out := new(UpdateResponse)
+	err := c.cc.Invoke(ctx, "/userService.UserService/update", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +77,7 @@ func (c *userServiceClient) Login(ctx context.Context, in *Login, opts ...grpc.C
 // for forward compatibility
 type UserServiceServer interface {
 	Register(context.Context, *Register) (*RegisterResponse, error)
+	Update(context.Context, *Update) (*UpdateResponse, error)
 	QueryUserInfo(context.Context, *Query) (*QueryResponse, error)
 	Login(context.Context, *Login) (*LoginResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
@@ -78,6 +89,9 @@ type UnimplementedUserServiceServer struct {
 
 func (UnimplementedUserServiceServer) Register(context.Context, *Register) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedUserServiceServer) Update(context.Context, *Update) (*UpdateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedUserServiceServer) QueryUserInfo(context.Context, *Query) (*QueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryUserInfo not implemented")
@@ -112,6 +126,24 @@ func _UserService_Register_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).Register(ctx, req.(*Register))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Update)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Update(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/userService.UserService/update",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Update(ctx, req.(*Update))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -162,6 +194,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "register",
 			Handler:    _UserService_Register_Handler,
+		},
+		{
+			MethodName: "update",
+			Handler:    _UserService_Update_Handler,
 		},
 		{
 			MethodName: "queryUserInfo",

@@ -105,6 +105,38 @@
           "UserService"
         ]
       }
+    },
+    "/api/v1/u/update": {
+      "put": {
+        "operationId": "UserService_update",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/userServiceUpdateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/userServiceUpdate"
+            }
+          }
+        ],
+        "tags": [
+          "UserService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -205,6 +237,29 @@
       }
     },
     "userServiceRegisterResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "token": {
+          "type": "string"
+        },
+        "verifyCode": {
+          "type": "string"
+        }
+      }
+    },
+    "userServiceUpdate": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "userServiceUpdateResponse": {
       "type": "object",
       "properties": {
         "id": {
