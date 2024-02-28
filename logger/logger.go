@@ -22,6 +22,7 @@ func PrintRequestInfo(req *http.Request) {
 	_, err := body.Read(b)
 	if err != nil {
 		slog.Info("request info: ", method, " ", url)
+		return
 	}
 
 	slog.Info("request info: ", method, " ", url, " ", b)
