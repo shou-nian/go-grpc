@@ -60,6 +60,8 @@ func GenerateVerifyCode(password string) string {
 	return s
 }
 
-func GenerateStrToken() string {
-	return "123"
+func GenerateStrToken(email string, password string) string {
+	code := sha256.Sum256([]byte(email + password))
+	s := hex.EncodeToString(code[:])
+	return s
 }
