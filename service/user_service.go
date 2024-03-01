@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
 	"github/riny/go-grpc/user-system/model"
 	"github/riny/go-grpc/user-system/repository"
 	"github/riny/go-grpc/user-system/util"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"net/http"
 	"regexp"
@@ -18,7 +18,10 @@ type ImplementedUserServiceServer struct {
 	sync.WaitGroup
 	UserServiceServer
 	UserRepo *repository.UserRepo
+	// refresh token
 }
+
+var _ UserServiceServer = &ImplementedUserServiceServer{}
 
 func NewImplementedUserServiceServer(userRepo *repository.UserRepo) *ImplementedUserServiceServer {
 	return &ImplementedUserServiceServer{UserRepo: userRepo}
@@ -29,7 +32,7 @@ func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*
 		return nil, status.Errorf(codes.InvalidArgument, "email and password is required.")
 	}
 
-	user, err := s.UserRepo.QueryUserInfo(ctx, req.Email)
+	user, err := s.UserRepo.QueryUserInfo(nil, req.Email)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "email or password error. please try again.")
 	}
@@ -38,7 +41,7 @@ func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*
 		return nil, status.Errorf(codes.InvalidArgument, "email or password error. please try again.")
 	}
 
-	res := &LoginResponse{Id: user.Id, Token: util.GenerateStrToken()}
+	res := &LoginResponse{Id: user.Id, Token: util.GenerateStrToken(req.Email, req.Password)}
 	return res, nil
 }
 
@@ -83,21 +86,39 @@ func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Regist
 		return nil, status.Errorf(codes.Canceled, "Task canceled due to timeout or cancellation")
 	default:
 		s.Lock()
-		err := s.UserRepo.CreateUser(ctx, user)
-		s.Unlock()
+		err := s.UserRepo.CreateUser(nil, user)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 		}
+		// update token
+		t := util.GenerateStrToken(user.Email, user.Password)
+		token := &model.Token{UserId: user.Id, Token: t}
+		err = s.UserRepo.UpdateToken(token)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+		}
+		s.Unlock()
+		res := &RegisterResponse{Id: user.Id, Token: t, VerifyCode: user.VerifyCode}
+		return res, nil
 	}
-
-	res := &RegisterResponse{Id: user.Id, Token: util.GenerateStrToken(), VerifyCode: user.VerifyCode}
-	return res, nil
 }
 
 func (s *ImplementedUserServiceServer) QueryUserInfo(ctx context.Context, req *Query) (*QueryResponse, error) {
-	if req.Id == 0 {
-		return nil, errors.New("user id is required")
+	md, _ := metadata.FromIncomingContext(ctx)
+	auth := md.Get("Authorization")
+	user, err := s.UserRepo.QueryUserInfoByToken(nil, auth[0][7:])
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 	}
 
-	return &QueryResponse{Id: req.Id, Email: "temp@temp.com"}, nil
+	if req.Id != user.Id && req.Id != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "user id and auth not eque. please try again.")
+	}
+
+	res := &QueryResponse{Id: user.Id, Email: user.Email}
+	return res, nil
+}
+
+func (s *ImplementedUserServiceServer) Update(ctx context.Context, req *Update) (*UpdateResponse, error) {
+	return nil, nil
 }
