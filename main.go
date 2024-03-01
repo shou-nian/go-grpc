@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github/riny/go-grpc/user-system/config"
-	"github/riny/go-grpc/user-system/logger"
 	"github/riny/go-grpc/user-system/repository"
 	"github/riny/go-grpc/user-system/service"
 	"google.golang.org/grpc"
@@ -81,7 +80,6 @@ func runGatewayServer(grpcServerEndpoint string, ur *repository.UserRepo) error 
 
 func allowAuthorizationMiddleware(h http.Handler, ur *repository.UserRepo) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.PrintRequestInfo(r)
 		path := r.URL.Path
 		if path == "/api/v1/u/get" {
 			auth := r.Header.Get("Authorization")
