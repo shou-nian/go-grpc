@@ -75,10 +75,10 @@ func runGatewayServer(grpcServerEndpoint string, ur *repository.UserRepo) error 
 	}
 
 	// 启动http服务
-	return http.ListenAndServe("localhost:8080", allowAuthorizationMiddleware(mux, ur))
+	return http.ListenAndServe("localhost:8080", requestInterceptMiddleware(mux, ur))
 }
 
-func allowAuthorizationMiddleware(h http.Handler, ur *repository.UserRepo) http.Handler {
+func requestInterceptMiddleware(h http.Handler, ur *repository.UserRepo) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if path == "/api/v1/u/get" {
@@ -91,7 +91,7 @@ func allowAuthorizationMiddleware(h http.Handler, ur *repository.UserRepo) http.
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
-			if exists, err := ur.CheckValidToken(nil, auth[7:]); !exists {
+			if valid, err := ur.CheckValidToken(nil, auth[7:]); !valid {
 				if err != nil {
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return
