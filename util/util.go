@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // CheckValidPassword
@@ -61,7 +62,7 @@ func GenerateVerifyCode(password string) string {
 }
 
 func GenerateStrToken(email string, password string) string {
-	code := sha256.Sum256([]byte(email + password))
+	code := sha256.Sum256([]byte(email + password + time.Now().String()))
 	s := hex.EncodeToString(code[:])
 	return s
 }
