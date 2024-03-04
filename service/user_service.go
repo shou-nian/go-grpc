@@ -19,6 +19,7 @@ type ImplementedUserServiceServer struct {
 	UserServiceServer
 	UserRepo *repository.UserRepo
 	// refresh token
+	// delete
 }
 
 var _ UserServiceServer = &ImplementedUserServiceServer{}
@@ -41,7 +42,15 @@ func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*
 		return nil, status.Errorf(codes.InvalidArgument, "email or password error. please try again.")
 	}
 
-	res := &LoginResponse{Id: user.Id, Token: util.GenerateStrToken(req.Email, req.Password)}
+	// generate new token
+	t := util.GenerateStrToken(req.Email, req.Password)
+	s.Lock()
+	_, err = s.UserRepo.UpdateUserInfo(&model.Token{UserId: user.Id, Token: t})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	}
+	s.Unlock()
+	res := &LoginResponse{Id: user.Id, Token: t}
 	return res, nil
 }
 
@@ -93,12 +102,16 @@ func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Regist
 		// update token
 		t := util.GenerateStrToken(user.Email, user.Password)
 		token := &model.Token{UserId: user.Id, Token: t}
-		err = s.UserRepo.UpdateToken(token)
+		_, err = s.UserRepo.UpdateUserInfo(token)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 		}
 		s.Unlock()
-		res := &RegisterResponse{Id: user.Id, Token: t, VerifyCode: user.VerifyCode}
+		res := &RegisterResponse{
+			Id:         user.Id,
+			Token:      t,
+			VerifyCode: user.VerifyCode,
+		}
 		return res, nil
 	}
 }
@@ -120,5 +133,46 @@ func (s *ImplementedUserServiceServer) QueryUserInfo(ctx context.Context, req *Q
 }
 
 func (s *ImplementedUserServiceServer) Update(ctx context.Context, req *Update) (*UpdateResponse, error) {
-	return nil, nil
+	updatePassword := req.Password
+	if ok, err := util.CheckValidPassword(updatePassword); !ok || updatePassword != req.ConfirmPassword {
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+		}
+		return nil, status.Errorf(codes.InvalidArgument, "password or confirm password is invalid. please check again.")
+	}
+
+	md, _ := metadata.FromIncomingContext(ctx)
+	auth := md.Get("Authorization")
+	user, err := s.UserRepo.QueryUserInfoByToken(nil, auth[0][7:])
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	}
+
+	// update password
+	s.Lock()
+	user.Password = updatePassword
+	updated1, err := s.UserRepo.UpdateUserInfo(user)
+	s.Unlock()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	}
+	updatedUser := updated1.(*model.User)
+
+	// update token
+	s.Lock()
+	token := &model.Token{UserId: updatedUser.Id}
+	updated2, err := s.UserRepo.UpdateUserInfo(token)
+	s.Unlock()
+	if err == nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	}
+	updatedToken := updated2.(*model.Token)
+
+	var res = &UpdateResponse{
+		Id:         updatedToken.UserId,
+		Token:      updatedToken.Token,
+		VerifyCode: updatedUser.VerifyCode,
+	}
+
+	return res, nil
 }
