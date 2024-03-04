@@ -21,6 +21,7 @@ message RegisterResponse {
 
 message Update {
   string password = 1;
+  string confirmPassword = 2;
 }
 
 message UpdateResponse {

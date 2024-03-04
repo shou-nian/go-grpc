@@ -256,6 +256,9 @@
       "properties": {
         "password": {
           "type": "string"
+        },
+        "confirmPassword": {
+          "type": "string"
         }
       }
     },
