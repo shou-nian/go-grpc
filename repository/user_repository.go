@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"github/riny/go-grpc/user-system/model"
 	"golang.org/x/net/context"
 	"time"
@@ -8,12 +9,11 @@ import (
 
 type UserRepositoryManagement interface {
 	CreateUser(ctx context.Context, user *model.User) error
-	UpdateUserInfo(ctx context.Context, args interface{}) (*model.User, error)
+	UpdateUserInfo(updateModel interface{}) (interface{}, error)
 	QueryUserInfo(ctx context.Context, args any) (*model.User, error)
 	QueryUserInfoByToken(ctx context.Context, token string) (*model.User, error)
 	CheckEmailIsExisting(email string) (bool, error)
 	CheckValidToken(ctx context.Context, token string) (bool, error)
-	UpdateToken(token *model.Token) error
 }
 
 type UserRepo struct {
@@ -30,10 +30,24 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user *model.User) error {
 	return ur.db.connection.Create(user).Error
 }
 
-func (ur *UserRepo) UpdateUserInfo(ctx context.Context, args interface{}) (*model.User, error) {
-	user := &model.User{}
+func (ur *UserRepo) UpdateUserInfo(updateModel interface{}) (interface{}, error) {
+	switch updateModel.(type) {
+	case *model.User:
+		var user = &model.User{}
+		if err := ur.db.connection.Save(updateModel).First(user).Error; err != nil {
+			return nil, err
+		}
+		return user, nil
+	case *model.Token:
+		var token = &model.Token{}
+		token.InDate = time.Now().Add(30 * 24 * time.Hour)
+		if err := ur.db.connection.Save(token).First(token).Error; err != nil {
+			return nil, err
+		}
+		return token, nil
+	}
 
-	return user, nil
+	return nil, errors.New("unsupported model")
 }
 
 func (ur *UserRepo) QueryUserInfo(ctx context.Context, args any) (*model.User, error) {
@@ -73,15 +87,14 @@ func (ur *UserRepo) CheckEmailIsExisting(email string) (bool, error) {
 }
 
 func (ur *UserRepo) CheckValidToken(ctx context.Context, token string) (bool, error) {
-	var count int64
-	if err := ur.db.connection.Model(&model.Token{}).Where("token = ?", token).Count(&count).Error; err != nil {
+	t := &model.Token{}
+	if err := ur.db.connection.Model(t).Where("token = ?", token).First(t).Error; err != nil {
 		return false, err
 	}
 
-	return count > 0, nil
-}
+	if t.InDate.Sub(time.Now()) < 0 {
+		return false, nil
+	}
 
-func (ur *UserRepo) UpdateToken(token *model.Token) error {
-	token.InDate = time.Now().Add(30 * 24 * time.Hour)
-	return ur.db.connection.Save(token).Error
+	return true, nil
 }
