@@ -12,6 +12,7 @@ type UserRepositoryManagement interface {
 	UpdateModel(updateModel interface{}) (interface{}, error)
 	QueryUserInfo(ctx context.Context, args any) (*model.User, error)
 	QueryUserInfoByToken(ctx context.Context, token string) (*model.User, error)
+	QueryTokenInfo(ctx context.Context, args any) (*model.Token, error)
 	CheckEmailIsExisting(email string) (bool, error)
 	CheckValidToken(ctx context.Context, token string) (bool, error)
 }
@@ -33,13 +34,14 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user *model.User) error {
 func (ur *UserRepo) UpdateModel(updateModel interface{}) (interface{}, error) {
 	switch updateModel.(type) {
 	case *model.User:
-		var user = &model.User{}
+		var user = updateModel.(*model.User)
 		if err := ur.db.connection.Save(updateModel).First(user).Error; err != nil {
 			return nil, err
 		}
 		return user, nil
 	case *model.Token:
-		var token = &model.Token{}
+		// TODO：后续考虑重构这一块 除了初次生成token 其他情况一般不会带Id主键来更新，就会导致多1次对token表的查询
+		var token = updateModel.(*model.Token)
 		token.InDate = time.Now().Add(30 * 24 * time.Hour)
 		if err := ur.db.connection.Save(token).First(token).Error; err != nil {
 			return nil, err
@@ -62,9 +64,27 @@ func (ur *UserRepo) QueryUserInfo(ctx context.Context, args any) (*model.User, e
 			return nil, err
 		}
 	default:
-		return nil, nil
+		return nil, errors.New("unsupported args type")
 	}
 	return user, nil
+}
+
+func (ur *UserRepo) QueryTokenInfo(ctx context.Context, args any) (*model.Token, error) {
+	var token = new(model.Token)
+	switch args.(type) {
+	case string:
+		if err := ur.db.connection.Model(&model.Token{}).Where("token = ?", args).First(token).Error; err != nil {
+			return nil, err
+		}
+	case int32:
+		if err := ur.db.connection.Model(&model.Token{}).Where("user_id = ?", args).First(token).Error; err != nil {
+			return nil, err
+		}
+	default:
+		return nil, errors.New("unsupported args type")
+	}
+
+	return token, nil
 }
 
 func (ur *UserRepo) QueryUserInfoByToken(ctx context.Context, token string) (*model.User, error) {
