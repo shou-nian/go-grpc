@@ -2,14 +2,14 @@ package repository
 
 import (
 	"errors"
-	"github/riny/go-grpc/user-system/model"
+	"github.com/riny/go-grpc/user-system/model"
 	"golang.org/x/net/context"
 	"time"
 )
 
 type UserRepositoryManagement interface {
 	CreateUser(ctx context.Context, user *model.User) error
-	UpdateUserInfo(updateModel interface{}) (interface{}, error)
+	UpdateModel(updateModel interface{}) (interface{}, error)
 	QueryUserInfo(ctx context.Context, args any) (*model.User, error)
 	QueryUserInfoByToken(ctx context.Context, token string) (*model.User, error)
 	CheckEmailIsExisting(email string) (bool, error)
@@ -30,7 +30,7 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user *model.User) error {
 	return ur.db.connection.Create(user).Error
 }
 
-func (ur *UserRepo) UpdateUserInfo(updateModel interface{}) (interface{}, error) {
+func (ur *UserRepo) UpdateModel(updateModel interface{}) (interface{}, error) {
 	switch updateModel.(type) {
 	case *model.User:
 		var user = &model.User{}

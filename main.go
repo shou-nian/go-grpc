@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github/riny/go-grpc/user-system/config"
-	"github/riny/go-grpc/user-system/repository"
-	"github/riny/go-grpc/user-system/service"
+	"github.com/riny/go-grpc/user-system/config"
+	"github.com/riny/go-grpc/user-system/repository"
+	"github.com/riny/go-grpc/user-system/service"
 	"google.golang.org/grpc"
 	"log"
 	"net"

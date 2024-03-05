@@ -1,4 +1,4 @@
-module github/riny/go-grpc/user-system
+module github.com/riny/go-grpc/user-system
 
 go 1.21.4
 

@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"github/riny/go-grpc/user-system/model"
-	"github/riny/go-grpc/user-system/repository"
-	"github/riny/go-grpc/user-system/util"
+	"github.com/riny/go-grpc/user-system/model"
+	"github.com/riny/go-grpc/user-system/repository"
+	"github.com/riny/go-grpc/user-system/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -45,7 +45,7 @@ func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*
 	// generate new token
 	t := util.GenerateStrToken(req.Email, req.Password)
 	s.Lock()
-	_, err = s.UserRepo.UpdateUserInfo(&model.Token{UserId: user.Id, Token: t})
+	_, err = s.UserRepo.UpdateModel(&model.Token{UserId: user.Id, Token: t})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 	}
@@ -102,7 +102,7 @@ func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Regist
 		// update token
 		t := util.GenerateStrToken(user.Email, user.Password)
 		token := &model.Token{UserId: user.Id, Token: t}
-		_, err = s.UserRepo.UpdateUserInfo(token)
+		_, err = s.UserRepo.UpdateModel(token)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 		}
@@ -151,7 +151,7 @@ func (s *ImplementedUserServiceServer) Update(ctx context.Context, req *Update) 
 	// update password
 	s.Lock()
 	user.Password = updatePassword
-	updated1, err := s.UserRepo.UpdateUserInfo(user)
+	updated1, err := s.UserRepo.UpdateModel(user)
 	s.Unlock()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
@@ -161,7 +161,7 @@ func (s *ImplementedUserServiceServer) Update(ctx context.Context, req *Update) 
 	// update token
 	s.Lock()
 	token := &model.Token{UserId: updatedUser.Id}
-	updated2, err := s.UserRepo.UpdateUserInfo(token)
+	updated2, err := s.UserRepo.UpdateModel(token)
 	s.Unlock()
 	if err == nil {
 		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
