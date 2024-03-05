@@ -45,7 +45,13 @@ func (s *ImplementedUserServiceServer) Login(ctx context.Context, req *Login) (*
 	// generate new token
 	t := util.GenerateStrToken(req.Email, req.Password)
 	s.Lock()
-	_, err = s.UserRepo.UpdateModel(&model.Token{UserId: user.Id, Token: t})
+	token, err := s.UserRepo.QueryTokenInfo(nil, user.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	}
+	token.Token = t
+
+	_, err = s.UserRepo.UpdateModel(token)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 	}
@@ -102,6 +108,7 @@ func (s *ImplementedUserServiceServer) Register(ctx context.Context, req *Regist
 		// update token
 		t := util.GenerateStrToken(user.Email, user.Password)
 		token := &model.Token{UserId: user.Id, Token: t}
+		// first generate token
 		_, err = s.UserRepo.UpdateModel(token)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
@@ -160,12 +167,18 @@ func (s *ImplementedUserServiceServer) Update(ctx context.Context, req *Update) 
 
 	// update token
 	s.Lock()
-	token := &model.Token{UserId: updatedUser.Id}
-	updated2, err := s.UserRepo.UpdateModel(token)
-	s.Unlock()
+	token, err := s.UserRepo.QueryTokenInfo(nil, updatedUser.Id)
 	if err == nil {
 		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
 	}
+
+	token.Token = util.GenerateStrToken(updatedUser.Email, updatedUser.Password)
+	updated2, err := s.UserRepo.UpdateModel(token)
+	if err == nil {
+		return nil, status.Errorf(codes.Internal, http.StatusText(http.StatusInternalServerError))
+	}
+	s.Unlock()
+
 	updatedToken := updated2.(*model.Token)
 
 	var res = &UpdateResponse{
