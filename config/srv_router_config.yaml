@@ -1,0 +1,11 @@
+services:
+  user_system:
+    get_user_info:
+      - method: get
+      - path: /api/v1/u/get
+      - auth: true
+
+    update_user_info:
+      - method: put
+      - path: /api/v1/u/update
+      - auth: true
